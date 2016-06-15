@@ -1,106 +1,36 @@
 #!/bin/bash
 while read -r line
 do
-    IFS=' ' read -r -a array <<< "$line"
-    if [ "${array[0]}" == "*" ]
+    if [ "$(echo $line | cut -c1-10)" == "app config" ]
     then
         IFS=' ' read -r -a array <<< "$line"
         branch_name="${array[1]}"
-        echo -e "WORKING ON BRANCH : $branch_name"
+        echo -e "\e[4mPUSH TO BRANCH NAME : $branch_name\e[24m"
         IFS='-' read -r -a array <<< "$branch_name"
         branch_id="${array[1]}"
         if [ "$(echo "$line" | awk '{split($0,a,"-"); print a[1]}')"  == "* feature" ]
         then
-            header="Feature #$branch_id"
+            header="feature #$branch_id"
         fi
 
-        if [ "$(echo "$line" | awk '{split($0,a,"-"); print a[1]}')"  == "* fix" ]
+        if [ "$(echo "$line" | awk '{split($0,a,"-"); print a[1]}')"  == "* bug" ]
         then
-            header="Fixed #$branch_id"
+            header="bug #$branch_id"
         fi
-
         if [ "$1" = "-p" ]
         then
-            echo "Pulling branch $branch_name ... ";
             git pull origin "$branch_name"
-        elif [ "$1" = "-h" ]
-        then
-        	echo "-p  => git pull"
-        	echo "-cp => git checkout "
         elif [ "$1" = "-c" ]
+        then
             git stash save -u "jig stash save for $branch_name"
             git checkout -b "$2" origin/master
-            echo -e "CREATE : $2"
-        elif [ "$1" = "-cp" ]
-        then
-            git stash save -u "jig stash save for $branch_name"
-            git checkout -b "$2" origin/$2
-            echo -e "COPY : $2"
-        elif [ "$1" = "-rb" ]
-        then
-            if [ "$2" = "-r" ]
-            then
-                git add .
-                git reset
-                git checkout .
-                while read -r file_name
-                do
-                    echo "remove : $file_name"
-                    rm -rf "$file_name"
-                done < <(git status)
-            else
-                git status | grep 'nothing to commit' &> /dev/null
-                if [ $? == 0 ]; 
-                then
-                    git fetch origin
-                    git checkout master
-                    git pull origin master
-                    git checkout "$branch_name"
-                    git rebase --onto master
-                    git pull origin "$branch_name"
-                    git status
-                    git stash list
-                else
-                    echo "PLEASE CLEAN YOUR WORK BEFORE REBASE."
-                    # git stash save -u "jig stash save for $branch_name"
-                    # git checkout .
-                    # git clean -f
-                fi
-            fi
-        elif [ "$1" = "-ch" ]
-        then
-            if [ "$2" = "-cm" ]
-            then
-                echo "YOU NEED TO CHANGE COMMIT MESSAGE FROM $3 TO $4 (CONFIRM Y/N) : "
-            elif [ "$2" = "-bn" ]
-            then
-                echo "YOU NEED TO CHANGE BRANCH NAME FROM $3 TO $4 (CONFIRM Y/N) : "
-            else
-                echo "PLEASE SELECT -ch OPTIONS"
-                echo "-cm FOR CHANGE LASTEST COMMIT MESSAGE"
-                echo "-bn FOR CHANGE BRANCH NAME"
-            fi
-        elif [ "$1" = "man" ]
-        then
-            echo "Welcome to g for git"
-            echo ""
-        elif [ "$1" = "-s" ]
-        then
-            gt-precommit
-            git stash save -u
-            git checkout $2
-            gts
-        elif [ "$1" = "-d" ]
-        then
-            gt-precommit
-            git diff
+            echo -e "\e[4mCREATE : $header $1\e[24m"
         else
-            echo -e "COMMIT MESSAGE : \"$header $1\""
-            echo "THIS FUCKING SHIT : $1 $2"
-            # git add .
+            echo -e "\e[4mCOMMIT MESSAGE : $header $1\e[24m"
+            git add .
             git commit -m "$header $1"
             git push origin "$branch_name"
         fi
-	break
+    break
     fi
 done < <(git branch)
