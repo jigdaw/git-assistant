@@ -28,6 +28,7 @@ do
         	echo "-p  => git pull"
         	echo "-cp => git checkout "
         elif [ "$1" = "-c" ]
+	then
             git stash save -u "jig stash save for $branch_name"
             git checkout -b "$2" origin/master
             echo -e "CREATE : $2"
